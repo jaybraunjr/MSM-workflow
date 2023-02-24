@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import pyemma
 from pyemma.util.contexts import settings
 import mdtraj
-import itertools
 from itertools import combinations
 import pandas as pdnp
 import numpy as np
@@ -14,7 +13,6 @@ from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.core.groups import AtomGroup
 import math
 from MDAnalysis.analysis import contacts
-from MDAnalysis.analysis import distances
 
 
 #### this is inefficient, should find a way to make this simple
@@ -40,23 +38,21 @@ class dist:
         # k1=j1.astype('float32')
         return 1/j1
 
-
 ### below is different method.
-        def dist_resids(self, traj,c1,c2):
-            centers1 = c1.transform(traj)  # yields ndarray
-            centers2 = c2.transform(traj)  # yields ndarray
-            cen1 = centers1[:,-1]
-            cen2 = centers2[:,-1]
+    def dist_resids(self, traj,c1,c2):
+        centers1 = c1.transform(traj)  # yields ndarray
+        centers2 = c2.transform(traj)  # yields ndarray
+        cen1 = centers1[:,-1]
+        cen2 = centers2[:,-1]
 
-            xyz = np.hstack((centers1, centers2))
-            traj = md.Trajectory(xyz.reshape(-1, 2, 3), topology=None)
-            
-            cont = md.compute_distances(traj,atom_pairs=[[0, 1]], periodic=False)
-            print(np.shape(cont))
-            return cont
+        xyz = np.hstack((centers1, centers2))
+        traj = md.Trajectory(xyz.reshape(-1, 2, 3), topology=None)
+        
+        cont = md.compute_distances(traj,atom_pairs=[[0, 1]], periodic=False)
+        print(np.shape(cont))
+        return cont
 
 ##########################################################################################
-
 
 ### contact analysis through MDtraj. Sloppy, would not use if have to.
 ### the below list has to be creating in script
@@ -74,7 +70,6 @@ class cont:
                 q.append(number)
 
         """
-
         cutoff=0.35
 
         j=md.compute_neighbors(traj,cutoff=cutoff,query_indices=q)
@@ -90,10 +85,8 @@ class cont:
         k=j.astype('float32')
         return k
 #####################################################################
-
 ### Now MDAnalyis contact script. Usually a bit more tunable 
-
-
+### and can be used with MDAnalysis
     def contacts_MDA(self, u, a, b, radius=3.5):
 
         timeseries = []
@@ -105,11 +98,7 @@ class cont:
             arr = np.array(timeseries)
         return np.transpose([arr])
 
-
-#############################################################
-
-
-
+#####################################################################
     def run_coord(self, u_, ag1, ag2, nn=6, mm=12, d0=0, r0=2.5, density=False, b=0, e=None, skip=1):
 
         """
@@ -129,14 +118,8 @@ class cont:
             coords /= (ag1.n_atoms * ag2.n_atoms)
         return np.transpose([coords])
 
-
-
 ################################################################
-
-
-## IN DEV
-
-
+## IN DEVELOPMENT
 ## Functions for helix tilt below:
 class tilt:
     
@@ -176,3 +159,18 @@ class tilt:
             y = solve(a,b)
             mylist.append([y])
         return np.array(mylist)
+    
+
+class tilt_mdtraj:
+
+    def helix_tilt_mdtraj(traj,a,b):
+        """
+        this uses mdtraj to caluclate the helix tilt
+        """
+        atom_indices = np.array([a, b])
+        helix_vectors = np.diff(traj.xyz[:, atom_indices, :], axis=1)
+        z_axis = np.array([0, 0, 1])
+        tilt_angles = np.arccos(np.dot(helix_vectors, z_axis))
+        tilt_angles = np.degrees(tilt_angles,dtype=np.float32)
+        return tilt_angles
+    

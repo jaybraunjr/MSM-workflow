@@ -110,3 +110,16 @@ class ReturnInputs:
         stuff2 = [np.transpose(reshape)]
         return(stuff2)
 
+
+
+
+
+
+def get_inputs(m, splits, feat_len):
+    processors = [ReturnInputs() for i in range(len(splits))]
+    inputs = [processor.return_inputs(m, i, feat_len)[0] for i, processor in enumerate(processors)]
+    return inputs
+
+def get_fubar_output(splits, feat_len):
+    processor = ChunkProcessor(splits, feat_len)
+    return processor.fubar(splits, feat_len)
